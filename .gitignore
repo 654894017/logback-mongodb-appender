@@ -1,0 +1,11 @@
+generated
+target
+.manager
+.idea
+*.i??
+*~
+.settings/**
+.project
+.factorypath
+.classpath
+.cache
