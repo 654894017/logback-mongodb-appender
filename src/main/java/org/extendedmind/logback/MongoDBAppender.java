@@ -34,8 +34,10 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.slf4j.Marker;
  
@@ -148,7 +150,25 @@ public class MongoDBAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         }
         Map<String, String> mdcMap = evt.getMDCPropertyMap();
         if (!mdcMap.isEmpty()){
-          dataMap.put("mdc", mdcMap);
+          Map<String, Object> mongoMdcMap = new HashMap<String, Object>();
+          // Try to save a numeric value as Int
+          Iterator<Entry<String,String>> it = mdcMap.entrySet().iterator();          
+          while (it.hasNext()) {
+        	Entry<String,String> pairs = it.next();        	
+        	if (isNumeric(pairs.getValue())){
+        		try{
+        			Integer intValue = Integer.parseInt(pairs.getValue());
+        			mongoMdcMap.put(pairs.getKey(), intValue);
+        		}catch(NumberFormatException nfe){  
+        			mongoMdcMap.put(pairs.getKey(), pairs.getValue());
+        		}
+        	}else{
+        		mongoMdcMap.put(pairs.getKey(), pairs.getValue());
+        	}
+            it.remove(); // avoids a ConcurrentModificationException
+          }
+          
+          dataMap.put("mdc", mongoMdcMap);
         }
         dataMap.put("message", evt.getFormattedMessage());
         
@@ -192,5 +212,12 @@ public class MongoDBAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
  
     public void setDb(String db) {
         this.db = db;
+    }
+    
+    private boolean isNumeric(String str){
+		for (char c : str.toCharArray()){
+	        if (!Character.isDigit(c)) return false;
+	    }
+	    return true;
     }
  }
