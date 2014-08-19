@@ -26,6 +26,7 @@ import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
+import com.mongodb.MongoClientURI;
 import com.mongodb.MongoException;
 
 import java.io.PrintWriter;
@@ -85,6 +86,7 @@ import org.slf4j.Marker;
 public class MongoDBAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
  
     private String host;
+    private String uri;
     private int port;
     private String db;
     private Map<String, DBCollection> logCollectionMap = new HashMap<String, DBCollection>();
@@ -113,7 +115,12 @@ public class MongoDBAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     }
  
     private void connect() throws UnknownHostException {
-        MongoClient client = new MongoClient(host, port);
+    	MongoClient client;
+    	if (this.uri == null){
+	        client = new MongoClient(host, port);
+    	}else{
+    		client = new MongoClient(new MongoClientURI(this.uri));
+    	}
         mongoDb = client.getDB(db == null ? "log" : db);
     }
  
@@ -190,6 +197,14 @@ public class MongoDBAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         }
     }
  
+    public String getUri() {
+        return this.uri;
+    }
+ 
+    public void setUri(String uri) {
+        this.uri = uri;
+    }
+
     public String getHost() {
         return host;
     }
@@ -197,7 +212,7 @@ public class MongoDBAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     public void setHost(String host) {
         this.host = host;
     }
- 
+    
     public int getPort() {
         return port;
     }
